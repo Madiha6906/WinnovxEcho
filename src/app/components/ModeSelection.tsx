@@ -1,0 +1,191 @@
+import {
+  ArrowLeft,
+  Briefcase,
+  BookOpen,
+  Search,
+  Mic,
+} from 'lucide-react';
+
+import { useEffect, useState } from 'react';
+
+import { recordAndSendAudio } from "../../services/speech/speechToText";
+import { speak } from "../../services/speech/textToSpeech";
+import { useLanguage, getMessage, speechLanguage } from '../../services/language';
+
+interface ModeSelectionProps {
+  onSelectMode: (mode: 'productivity' | 'learning' | 'research') => void;
+  onGoBack: () => void;
+}
+
+export default function ModeSelection({
+  onSelectMode,
+  onGoBack,
+}: ModeSelectionProps) {
+
+  const language = useLanguage();
+  const [status, setStatus] = useState("Idle");
+  const [transcript, setTranscript] = useState("");
+
+  useEffect(() => {
+    startVoiceFlow();
+  }, [language]);
+
+  async function startVoiceFlow() {
+    setStatus("Speaking...");
+    speak(getMessage('modeSelection', 'prompt', language));
+
+    setTimeout(async () => {
+      setStatus("Listening...");
+      const text = await recordAndSendAudio(speechLanguage[language]);
+      setTranscript(text);
+      setStatus("Processing...");
+      handleVoiceSelection(text);
+    }, 7000); // ✅ increased to 7s so TTS finishes before mic starts
+  }
+
+  function handleVoiceSelection(text: string) {
+    const lower = text.toLowerCase().trim();
+    console.log("Heard:", lower);
+
+    if (
+      lower.includes("productivity") ||
+      lower.includes("productive") ||
+      lower.includes("one") ||
+      lower.includes("1") ||
+      lower.includes("ఉత్పాదకత")
+    ) {
+      speak(getMessage('modeSelection', 'openingProductivity', language));
+      setStatus("Speaking...");
+      setTimeout(() => onSelectMode("productivity"), 2000);
+    }
+
+    else if (
+      lower.includes("learn") ||
+      lower.includes("learning") ||
+      lower.includes("two") ||
+      lower.includes("2") ||
+      lower.includes("లెర్నింగ్")
+    ) {
+      speak(getMessage('modeSelection', 'openingLearning', language));
+      setStatus("Speaking...");
+      setTimeout(() => onSelectMode("learning"), 2000);
+    }
+
+    else if (
+      lower.includes("research") ||
+      lower.includes("three") ||
+      lower.includes("3") ||
+      lower.includes("రిసెర్చ్")
+    ) {
+      speak(getMessage('modeSelection', 'openingResearch', language));
+      setStatus("Speaking...");
+      setTimeout(() => onSelectMode("research"), 2000);
+    }
+
+    else if (
+      lower.includes("go back") ||
+      lower.includes("back") ||
+      lower.includes("return") ||
+      lower.includes("తిరిగి")
+    ) {
+      speak(getMessage('modeSelection', 'goingBack', language));
+      setStatus("Speaking...");
+      setTimeout(() => onGoBack(), 2000);
+    }
+
+    else {
+      speak(getMessage('modeSelection', 'notUnderstood', language));
+      setStatus("Idle");
+      setTimeout(() => startVoiceFlow(), 5000);
+    }
+  }
+
+  return (
+    <div className="flex flex-col h-full px-6 py-12 bg-black text-white">
+      <div className="max-w-4xl w-full mx-auto flex flex-col gap-8">
+
+        {/* Title */}
+        <h1
+          className="text-[48px] font-bold text-center mb-4"
+          style={{ fontFamily: 'Neuton, serif' }}
+        >
+          {getMessage('modeSelection', 'title', language)}
+        </h1>
+
+        {/* Mode Buttons */}
+        <div className="flex flex-col gap-6">
+
+          {/* Productivity */}
+          <button
+            onClick={() => onSelectMode('productivity')}
+            className="w-full min-h-[90px] bg-white text-black rounded-lg hover:scale-105 transition-transform duration-200 focus:outline-none focus:ring-4 focus:ring-[#FFD700] flex items-center justify-start gap-6 px-8"
+          >
+            <div className="flex items-center justify-center w-12 h-12 bg-black rounded-full">
+              <Briefcase size={24} className="text-white" />
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-[32px] font-bold" style={{ fontFamily: 'Neuton, serif' }}>1</span>
+              <span className="text-[24px] font-bold" style={{ fontFamily: 'Neuton, serif' }}>{getMessage('modeSelection', 'productivityMode', language)}</span>
+            </div>
+          </button>
+
+          {/* Learning */}
+          <button
+            onClick={() => onSelectMode('learning')}
+            className="w-full min-h-[90px] bg-white text-black rounded-lg hover:scale-105 transition-transform duration-200 focus:outline-none focus:ring-4 focus:ring-[#FFD700] flex items-center justify-start gap-6 px-8"
+          >
+            <div className="flex items-center justify-center w-12 h-12 bg-black rounded-full">
+              <BookOpen size={24} className="text-white" />
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-[32px] font-bold" style={{ fontFamily: 'Neuton, serif' }}>2</span>
+              <span className="text-[24px] font-bold" style={{ fontFamily: 'Neuton, serif' }}>{getMessage('modeSelection', 'learningMode', language)}</span>
+            </div>
+          </button>
+
+          {/* Research */}
+          <button
+            onClick={() => onSelectMode('research')}
+            className="w-full min-h-[90px] bg-white text-black rounded-lg hover:scale-105 transition-transform duration-200 focus:outline-none focus:ring-4 focus:ring-[#FFD700] flex items-center justify-start gap-6 px-8"
+          >
+            <div className="flex items-center justify-center w-12 h-12 bg-black rounded-full">
+              <Search size={24} className="text-white" />
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-[32px] font-bold" style={{ fontFamily: 'Neuton, serif' }}>3</span>
+              <span className="text-[24px] font-bold" style={{ fontFamily: 'Neuton, serif' }}>{getMessage('modeSelection', 'researchMode', language)}</span>
+            </div>
+          </button>
+
+        </div>
+
+        <button
+          onClick={onGoBack}
+          className="w-full min-h-[90px] border-2 border-[#FFD700] text-white rounded-lg hover:bg-[#FFD700] hover:text-black transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-[#FFD700] flex items-center justify-center gap-4"
+        >
+          <ArrowLeft size={24} />
+          <span className="text-[22px] font-semibold" style={{ fontFamily: 'Neuton, serif' }}>
+            {getMessage('modeSelection', 'goBack', language)}
+          </span>
+        </button>
+
+        {/* Status */}
+        <div className="flex flex-col items-center justify-center gap-2 mt-4">
+          <div className="flex items-center gap-3">
+            <Mic size={20} className="text-[#FFD700] animate-pulse" />
+            <span className="text-[18px] text-[#FFD700]" style={{ fontFamily: 'Inter, sans-serif' }}>
+              {getMessage('modeSelection', 'status', language)} {status}
+            </span>
+          </div>
+
+          {transcript && (
+            <p className="text-gray-300 text-[18px] text-center mt-2" style={{ fontFamily: 'Inter, sans-serif' }}>
+              Heard: "{transcript}"
+            </p>
+          )}
+        </div>
+
+      </div>
+    </div>
+  );
+}

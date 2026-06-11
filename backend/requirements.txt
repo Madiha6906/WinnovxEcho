@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+faster-whisper
+PyPDF2
+python-multipart
+requests
+gtts
