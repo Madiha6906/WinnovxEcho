@@ -128,7 +128,7 @@ export default function LanguageSelectionScreen({ onLanguageSelected }: Language
       <div className="flex flex-col items-center gap-10 max-w-2xl w-full">
         <div className="text-center">
           <h1 className="text-[64px] font-bold mb-4" style={{ fontFamily: 'Neuton, serif' }}>
-            EchoEd
+            Serah AI
           </h1>
           <p className="text-[22px]" style={{ fontFamily: 'Inter, sans-serif' }}>
             {getMessage('languageSelection', 'subtitle', displayLanguage)}

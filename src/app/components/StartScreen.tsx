@@ -166,7 +166,7 @@ export default function StartScreen({ onStart, onDemo }: StartScreenProps) {
             className="text-[64px] font-bold mb-4"
             style={{ fontFamily: 'Neuton, serif' }}
           >
-            EchoEd
+            Serah AI
           </h1>
 
           <p

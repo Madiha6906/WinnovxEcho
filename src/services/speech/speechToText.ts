@@ -1,3 +1,5 @@
+import { BACKEND_URL } from "../backend";
+
 export async function recordAndSendAudio(language: string, durationMs = 10000) {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -34,7 +36,7 @@ export async function recordAndSendAudio(language: string, durationMs = 10000) {
           formData.append("file", audioBlob, "recording.webm");
 
           const langParam = encodeURIComponent(language);
-          const response = await fetch(`http://127.0.0.1:8000/transcribe?lang=${langParam}`, {
+          const response = await fetch(`${BACKEND_URL}/transcribe?lang=${langParam}`, {
             method: "POST",
             body: formData,
           });

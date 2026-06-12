@@ -9,6 +9,7 @@ import {
 
 import { useEffect, useRef, useState } from "react";
 import { useLanguage, getMessage, speechLanguage } from "../../services/language";
+import { BACKEND_URL } from "../../services/backend";
 import { speak, speakNow } from "../../services/speech/textToSpeech";
 
 interface ProductivityModeProps {
@@ -21,13 +22,6 @@ interface Task {
   duration: number;
   done: boolean | null;
   timeSpent: number;
-}
-
-interface Reminder {
-  id: number;
-  text: string;
-  triggerMinutes: number;
-  triggered: boolean;
 }
 
 interface PerformanceEntry {
@@ -173,7 +167,7 @@ function extractDuration(text: string): number {
 }
 
 export default function ProductivityMode({ onBack }: ProductivityModeProps) {
-  type Screen = "plan" | "reminders" | "tasks" | "done";
+  type Screen = "plan" | "tasks" | "done";
 
   const language = useLanguage();
   const [screen, setScreen] = useState<Screen>("plan");
@@ -183,11 +177,9 @@ export default function ProductivityMode({ onBack }: ProductivityModeProps) {
   const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
-  const [reminders, setReminders] = useState<Reminder[]>([]);
   const [performance, setPerformance] = useState<PerformanceEntry[]>([]);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const reminderRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const recognitionRef = useRef<any>(null);
   const tasksRef = useRef<Task[]>([]);
   const currentTaskRef = useRef(0);
@@ -205,11 +197,9 @@ export default function ProductivityMode({ onBack }: ProductivityModeProps) {
 
   useEffect(() => {
     startFlow();
-    startReminderWatcher();
     return () => {
       stopListening();
       if (timerRef.current) clearInterval(timerRef.current);
-      if (reminderRef.current) clearInterval(reminderRef.current);
       speechSynthesis.cancel();
     };
   }, []);
@@ -294,80 +284,7 @@ export default function ProductivityMode({ onBack }: ProductivityModeProps) {
 
     await speakAndWait(`I have noted ${parsed.length} tasks. ${summary}.`);
 
-    await askReminders(parsed);
-  }
-
-  // ══════════════════════════════════════════
-  // STEP 3 — Ask for reminders
-  // ══════════════════════════════════════════
-  async function askReminders(parsed: Task[]) {
-    setScreen("reminders");
-    setStatus("Speaking...");
-
-    await speakAndWait("Do you want to set any reminders? Say yes or no.");
-
-    setStatus("Listening...");
-    const answer = await recordAudio(speechLanguage[language], 6000);
-    setTranscript(answer);
-
-    const lower = answer.toLowerCase();
-
-    if (
-      lower.includes("yes") ||
-      lower.includes("yeah") ||
-      lower.includes("sure") ||
-      lower.includes("okay")
-    ) {
-      await speakAndWait(
-        "Tell me your reminders. For example: remind me in thirty minutes to drink water, remind me in one hour to take a break. You have 15 seconds."
-      );
-
-      setStatus("Listening...");
-      const reminderText = await recordAudio(speechLanguage[language], 15000);
-      setTranscript(reminderText);
-      parseReminders(reminderText);
-
-      await speakAndWait(getMessage('productivityMode', 'remindersNoted', language));
-    } else {
-      await speakAndWait(getMessage('productivityMode', 'noReminders', language));
-    }
-
     await beginTask(parsed, 0);
-  }
-
-  // ══════════════════════════════════════════
-  // PARSE REMINDERS
-  // ══════════════════════════════════════════
-  function parseReminders(rawText: string) {
-    const text = wordsToNumbers(rawText);
-    const parts = text
-      .split(/remind me|reminder/gi)
-      .filter((p) => p.trim().length > 3);
-
-    const parsed: Reminder[] = [];
-
-    parts.forEach((part) => {
-      const minMatch = part.match(/(\d+)\s*(?:minutes?|mins?|min)\b/i);
-      const hourMatch = part.match(/(\d+)\s*(?:hours?|hrs?|hour)\b/i);
-      const toMatch = part.match(/to\s+(.+?)(?:,|$)/i);
-
-      let minutes = 0;
-      if (minMatch) minutes += parseInt(minMatch[1]);
-      if (hourMatch) minutes += parseInt(hourMatch[1]) * 60;
-
-      const reminderText = toMatch ? toMatch[1].trim() : part.trim();
-
-      if (minutes > 0 && reminderText.length > 0) {
-        parsed.push({
-          id: Date.now() + Math.random(),
-          text: reminderText,
-          triggerMinutes: minutes,
-          triggered: false,
-        });
-      }
-    });
-
-    setReminders(parsed);
   }
 
   // ══════════════════════════════════════════
@@ -393,7 +310,7 @@ export default function ProductivityMode({ onBack }: ProductivityModeProps) {
         : "No duration detected. A stopwatch will run.";
 
     await speakAndWait(
-      `Task ${task.id}: ${stripDuration(task.text)}. ${durationText} Say yes to start the timer or say no to skip.`
+      `Task ${task.id}: ${stripDuration(task.text)}. ${durationText} Say start to begin the task or say skip to skip it.`
     );
 
     startListening();
@@ -490,14 +407,8 @@ export default function ProductivityMode({ onBack }: ProductivityModeProps) {
 
     if (!task) return;
 
-    // YES — start timer
-    if (
-      (cmd.includes("yes") ||
-        cmd.includes("start") ||
-        cmd.includes("okay") ||
-        cmd.includes("sure")) &&
-      !timerRunningRef.current
-    ) {
+    // START — begin task
+    if (cmd.includes("start") && !timerRunningRef.current) {
       startTimer(task.duration);
       setTimeout(() => {
         safeSpeakOnce(
@@ -515,12 +426,8 @@ export default function ProductivityMode({ onBack }: ProductivityModeProps) {
       return;
     }
 
-    // NOT DONE / SKIP
-    if (
-      cmd.includes("not done") ||
-      cmd.includes("skip") ||
-      (cmd.includes("no") && !timerRunningRef.current)
-    ) {
+    // SKIP
+    if (cmd.includes("not done") || cmd.includes("skip")) {
       finishTask(index, false);
       return;
     }
@@ -652,7 +559,7 @@ export default function ProductivityMode({ onBack }: ProductivityModeProps) {
 
         await speakAndWait(resultMsg);
         await speakAndWait(
-          `Moving to Task ${nextTask.id}: ${stripDuration(nextTask.text)}. ${durationText} Say yes to start or no to skip.`
+          `Moving to Task ${nextTask.id}: ${stripDuration(nextTask.text)}. ${durationText} Say start to begin the task or say skip to skip it.`
         );
         startListening();
       }, 500);
@@ -745,24 +652,6 @@ export default function ProductivityMode({ onBack }: ProductivityModeProps) {
     speakNext();
   }
 
-  // ══════════════════════════════════════════
-  // REMINDER WATCHER
-  // ══════════════════════════════════════════
-  function startReminderWatcher() {
-    startTimeRef.current = Date.now();
-    reminderRef.current = setInterval(() => {
-      const elapsed = (Date.now() - startTimeRef.current) / 60000;
-      setReminders((prev) =>
-        prev.map((r) => {
-          if (!r.triggered && elapsed >= r.triggerMinutes) {
-            safeSpeakOnce(`${getMessage('productivityMode', 'reminderPrefix', language)} ${r.text}`);
-            return { ...r, triggered: true };
-          }
-          return r;
-        })
-      );
-    }, 30000);
-  }
 
   const currentTask = tasks[currentTaskIndex];
 
@@ -802,32 +691,6 @@ export default function ProductivityMode({ onBack }: ProductivityModeProps) {
     );
   }
 
-  if (screen === "reminders") {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white px-6">
-        <div className="max-w-2xl w-full flex flex-col items-center gap-8">
-          <h1 className="text-[48px] font-bold text-center" style={{ fontFamily: "Neuton, serif" }}>
-            Reminders
-          </h1>
-          <div className="bg-[#1a1a1a] border-2 border-[#FFD700] rounded-lg p-10 w-full flex flex-col items-center gap-6">
-            <Bell
-              size={64}
-              className={status.startsWith("Listening") ? "text-[#FFD700] animate-pulse" : "text-white"}
-            />
-            <p className="text-[22px] text-center" style={{ fontFamily: "Inter, sans-serif" }}>
-              {status.startsWith("Speaking") && "🔊 Do you want reminders?"}
-              {status.startsWith("Listening") && "🎙️ Say yes or no..."}
-              {status.startsWith("Processing") && "⏳ Setting reminders..."}
-            </p>
-            <span className="text-[#FFD700] text-[18px]">Status: {status}</span>
-          </div>
-          {transcript && (
-            <p className="text-gray-400 text-[14px] text-center">Heard: "{transcript}"</p>
-          )}
-        </div>
-      </div>
-    );
-  }
 
   if (screen === "done") {
     return (
@@ -1021,28 +884,6 @@ export default function ProductivityMode({ onBack }: ProductivityModeProps) {
           </div>
         </div>
 
-        {reminders.length > 0 && (
-          <div className="bg-[#1a1a1a] rounded-xl p-6 border border-gray-700">
-            <h2 className="text-[24px] font-bold mb-4 text-[#FFD700]" style={{ fontFamily: "Neuton, serif" }}>
-              <Bell size={20} className="inline mr-2" />Reminders
-            </h2>
-            <div className="space-y-3">
-              {reminders.map((r) => (
-                <div
-                  key={r.id}
-                  className={`border rounded-lg p-3 flex items-center gap-3 ${
-                    r.triggered ? "border-gray-700 opacity-50" : "border-[#FFD700]"
-                  }`}
-                >
-                  <Bell size={16} className={r.triggered ? "text-gray-500" : "text-[#FFD700]"} />
-                  <p className="text-[15px]" style={{ fontFamily: "Inter, sans-serif" }}>
-                    In {r.triggerMinutes} min: {r.text}{r.triggered && " ✓"}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         <button
           onClick={readPerformance}

@@ -1,7 +1,32 @@
 let currentSpeechLang = 'en-US';
+let voicesReadyPromise: Promise<void> | null = null;
 
 export function setSpeechLanguage(lang: string) {
   currentSpeechLang = lang;
+}
+
+function ensureVoicesReady(): Promise<void> {
+  const voices = speechSynthesis.getVoices();
+  if (voices.length > 0) return Promise.resolve();
+  if (voicesReadyPromise) return voicesReadyPromise;
+
+  voicesReadyPromise = new Promise((resolve) => {
+    const onVoicesChanged = () => {
+      const loaded = speechSynthesis.getVoices();
+      if (loaded.length > 0) {
+        speechSynthesis.removeEventListener('voiceschanged', onVoicesChanged);
+        resolve();
+      }
+    };
+
+    speechSynthesis.addEventListener('voiceschanged', onVoicesChanged);
+    setTimeout(() => {
+      speechSynthesis.removeEventListener('voiceschanged', onVoicesChanged);
+      resolve();
+    }, 2000);
+  });
+
+  return voicesReadyPromise;
 }
 
 function chooseVoice(lang: string): SpeechSynthesisVoice | null {
@@ -13,13 +38,24 @@ function chooseVoice(lang: string): SpeechSynthesisVoice | null {
     voice.lang.toLowerCase().startsWith(normalized)
   );
 
-  const maleVoicePattern = /(male|man|boy|eric|david|mark|google|google uk|google us|matt|raj|gagan|azure)/i;
-  const maleMatching = matchingVoices.filter((voice) =>
-    maleVoicePattern.test(`${voice.name} ${voice.voiceURI}`)
+  const femaleVoicePattern = /(female|woman|girl|lady|zira|samantha|iva|susan|jane|kate|voice 1|voice 2|olivia|ava|bella|michelle|ariana|victoria|nora|emma|alloy|google female|google uk female|google us female|microsoft zira|serena|kira|irina|kyla)/i;
+  const femaleMatching = matchingVoices.filter((voice) =>
+    femaleVoicePattern.test(`${voice.name} ${voice.voiceURI}`)
   );
 
-  if (maleMatching.length > 0) return maleMatching[0];
-  if (matchingVoices.length > 0) return matchingVoices[0];
+  if (femaleMatching.length > 0) return femaleMatching[0];
+  if (matchingVoices.length > 0) {
+    const fallbackFemale = matchingVoices.find((voice) =>
+      femaleVoicePattern.test(`${voice.name} ${voice.voiceURI}`)
+    );
+    if (fallbackFemale) return fallbackFemale;
+    return matchingVoices[0];
+  }
+
+  const anyFemale = voices.find((voice) =>
+    femaleVoicePattern.test(`${voice.name} ${voice.voiceURI}`)
+  );
+  if (anyFemale) return anyFemale;
 
   return (
     voices.find((voice) => voice.lang.toLowerCase().includes(normalized)) ||
@@ -28,10 +64,12 @@ function chooseVoice(lang: string): SpeechSynthesisVoice | null {
   );
 }
 
-export function createSpeechUtterance(text: string) {
+export async function createSpeechUtterance(text: string) {
+  await ensureVoicesReady();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = currentSpeechLang;
-  utterance.voice = chooseVoice(currentSpeechLang);
+  const voice = chooseVoice(currentSpeechLang);
+  if (voice) utterance.voice = voice;
   utterance.rate = 0.9;
   utterance.pitch = 1.0;
   return utterance;
@@ -53,7 +91,7 @@ function stopCurrentAudio() {
 
 async function fetchTtsAudio(text: string): Promise<Blob> {
   const payload = { text, lang: currentSpeechLang };
-  const response = await fetch('http://127.0.0.1:8000/tts', {
+  const response = await fetch(`${BACKEND_URL}/tts`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -100,9 +138,9 @@ async function playTtsAudio(text: string): Promise<void> {
   }
 }
 
-function speakBrowser(text: string): Promise<void> {
+async function speakBrowser(text: string): Promise<void> {
+  const utterance = await createSpeechUtterance(text);
   return new Promise((resolve) => {
-    const utterance = createSpeechUtterance(text);
     utterance.onend = () => resolve();
     utterance.onerror = () => resolve();
     speechSynthesis.speak(utterance);
@@ -122,8 +160,9 @@ export function speakNow(text: string) {
     return;
   }
 
-  const utterance = createSpeechUtterance(text);
-  speechSynthesis.speak(utterance);
+  void createSpeechUtterance(text).then((utterance) => {
+    speechSynthesis.speak(utterance);
+  });
 }
 
 export function speakAndWait(text: string): Promise<void> {

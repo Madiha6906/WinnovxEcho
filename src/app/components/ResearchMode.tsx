@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, Bookmark, ArrowLeft, Mic, Play, Volume2, Highlighter } from 'lucide-react';
 import { getMessage, useLanguage, speechLanguage } from '../../services/language';
+import { BACKEND_URL } from '../../services/backend';
 import { speak, speakNow } from '../../services/speech/textToSpeech';
 
 interface ResearchModeProps {
@@ -64,7 +65,7 @@ async function recordAudio(ms: number, language: string): Promise<string> {
         form.append("file", blob, "recording.webm");
         try {
           const res = await fetch(
-            `http://127.0.0.1:8000/transcribe?lang=${encodeURIComponent(language)}`,
+            `${BACKEND_URL}/transcribe?lang=${encodeURIComponent(language)}`,
             { method: "POST", body: form }
           );
           const data = await res.json();
@@ -78,7 +79,7 @@ async function recordAudio(ms: number, language: string): Promise<string> {
 }
 
 async function fetchPapersFromBackend(topic: string): Promise<Paper[]> {
-  const localUrl = `http://127.0.0.1:8000/research/search?q=${encodeURIComponent(topic)}`;
+  const localUrl = `${BACKEND_URL}/research/search?q=${encodeURIComponent(topic)}`;
 
   try {
     const res = await fetch(localUrl);

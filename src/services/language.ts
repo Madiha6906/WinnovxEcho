@@ -16,12 +16,12 @@ export function useLanguage() {
 const messages: Record<string, Record<string, { english: string; telugu: string }>> = {
   languageSelection: {
     title: {
-      english: 'EchoEd',
-      telugu: 'ఎకోఈడ్',
+      english: 'Serah AI',
+      telugu: 'సిరా AI',
     },
     subtitle: {
-      english: 'Welcome to EchoEd. Select your language and enter your name.',
-      telugu: 'ఎకోఈడ్‌కు స్వాగతం. మీ భాషను ఎంచుకోండి.',
+      english: 'Welcome to Serah AI. Select your language.',
+      telugu: 'సిరా AIకి స్వాగతం. మీ భాషను ఎంచుకోండి.',
     },
     messageDefault: {
       english: 'Please say English or Telugu to continue.',
@@ -32,12 +32,12 @@ const messages: Record<string, Record<string, { english: string; telugu: string 
       telugu: 'భాష ఎంచుకోబడింది: {lang}. ఎకోఈడ్‌ను ప్రారంభిస్తున్నాం.',
     },
     selectedSpeechEnglish: {
-      english: 'You selected English. Opening EchoEd.',
-      telugu: 'మీరు ఆంగ్లాన్ని ఎంచుకున్నారు. ఎకోఈడ్‌ను ప్రారంభిస్తున్నాం.',
+      english: 'You selected English. Opening Serah AI.',
+      telugu: 'మీరు ఆంగ్లాన్ని ఎంచుకున్నారు. సిరా AIని ప్రారంభిస్తున్నాం.',
     },
     selectedSpeechTelugu: {
-      english: 'You selected Telugu. Opening EchoEd.',
-      telugu: 'మీరు తెలుగును ఎంచుకున్నారు. ఎకోఈడ్‌ను ప్రారంభిస్తున్నాం.',
+      english: 'You selected Telugu. Opening Serah AI.',
+      telugu: 'మీరు తెలుగును ఎంచుకున్నారు. సిరా AIని ప్రారంభిస్తున్నాం.',
     },
     continue: {
       english: 'Continue',
@@ -58,8 +58,8 @@ const messages: Record<string, Record<string, { english: string; telugu: string 
   },
   startScreen: {
     title: {
-      english: 'EchoEd',
-      telugu: 'ఎకోఈడ్',
+      english: 'Serah AI',
+      telugu: 'సిరా AI',
     },
     subtitle: {
       english: 'Voice-First Learning Assistant',
@@ -78,8 +78,8 @@ const messages: Record<string, Record<string, { english: string; telugu: string 
       telugu: 'ఆవజను ఆపండి',
     },
     welcomeSpeech: {
-      english: 'Hey, this is EchoEd - your learning assistant. To get started, say Start Assistant or if you need guidance, say How to use. If you want to stop the voice, just say Stop.',
-      telugu: 'హలో, ఇది ఎకోఈడ్ మీ అధ్యయన సహాయకుడు. మొదలవడానికి, అశిస్టెంట్ ప్రారంభించండి అని చెప్పండి లేదా సూచన కోసం, ఎలా ఉపయోగించాలో చెప్పండి. ఆవజను ఆపాలనిపిస్తే, ఆపు అని చెప్పండి.',
+      english: 'Hey, this is Serah AI - your learning assistant. To get started, say Start Assistant or if you need guidance, say How to use. If you want to stop the voice, just say Stop.',
+      telugu: 'హలో, ఇది సిరా AI మీ అధ్యయన సహాయకుడు. మొదలవడానికి, అశిస్టెంట్ ప్రారంభించండి అని చెప్పండి లేదా సూచన కోసం, ఎలా ఉపయోగించాలో చెప్పండి. ఆవజను ఆపాలనిపిస్తే, ఆపు అని చెప్పండి.',
     },
     openingAssistant: {
       english: 'Opening assistant. Please wait.',
@@ -100,23 +100,23 @@ const messages: Record<string, Record<string, { english: string; telugu: string 
   },
   modeSelection: {
     title: {
-      english: 'Choose Mode',
+      english: 'Whats your plan for today?',
       telugu: 'మోడ్ ఎంచుకోండి',
     },
     prompt: {
-      english: 'Choose a mode. Say Productivity Mode, Learning Mode, Research Mode, or say Go Back to return.',
+      english: 'Say productivity, learning, research, or say Go Back to return.',
       telugu: 'మోడ్‌ను ఎంచుకోండి. ప్రోడక్టివిటీ మోడ్, లెర్నింగ్ మోడ్, రీసెర్చ్ మోడ్ అని చెప్పండి లేదా తిరిగి వెళ్ళడానికి గో బ్యాక్ అని చెప్పండి.',
     },
     productivityMode: {
-      english: 'Productivity Mode',
+      english: 'productivity',
       telugu: 'ఉత్పాదకత మోడ్',
     },
     learningMode: {
-      english: 'Learning Mode',
+      english: 'learning',
       telugu: 'లెర్నింగ్ మోడ్',
     },
     researchMode: {
-      english: 'Research Mode',
+      english: 'research',
       telugu: 'రిసెర్చ్ మోడ్',
     },
     goBack: {
@@ -744,8 +744,8 @@ export function getMessage(
 
 export const demoScreenSentences: Record<LanguageOption, string[]> = {
   english: [
-    'Welcome to the How to Use guide for EchoEd.',
-    'EchoEd is a voice-first study assistant built for study sessions and learning by speaking.',
+    'Welcome to the How to Use guide for Serah AI.',
+    'Serah AI is a voice-first study assistant built for study sessions and learning by speaking.',
     'Use the Start Assistant button on the main page to begin your voice-driven experience.',
     'Once the assistant is active, you can speak commands instead of tapping the screen.',
     'Learning Mode helps you understand any topic. Say a topic and EchoEd will explain it clearly, then you can ask to hear it again or choose a new topic.',
