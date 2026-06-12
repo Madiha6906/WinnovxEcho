@@ -101,10 +101,10 @@ export function useLearningMode(onBack?: () => void) {
   async function say(text: string) {
     setStatus("speaking");
     await speak(text);
-    await delay(300);
+    await delay(1200);
   }
 
-  async function listen(durationMs = 4000): Promise<string> {
+  async function listen(durationMs = 7000): Promise<string> {
     setStatus("listening");
     const result = await recordAndSendAudio(speechLanguage[language], durationMs);
     return (result ?? "").trim().toLowerCase();
@@ -515,6 +515,42 @@ export function useLearningMode(onBack?: () => void) {
     }
   }, []);
 
+  async function startExplanation() {
+    if (isRunning.current) return;
+    isRunning.current = true;
+    exitRequestedRef.current = false;
+    try {
+      await runExplanationFlow();
+    } finally {
+      isRunning.current = false;
+      setStatus("idle");
+    }
+  }
+
+  async function startRecall() {
+    if (isRunning.current) return;
+    isRunning.current = true;
+    exitRequestedRef.current = false;
+    try {
+      await runRecallFlow();
+    } finally {
+      isRunning.current = false;
+      setStatus("idle");
+    }
+  }
+
+  async function startTeach() {
+    if (isRunning.current) return;
+    isRunning.current = true;
+    exitRequestedRef.current = false;
+    try {
+      await runTeachFlow();
+    } finally {
+      isRunning.current = false;
+      setStatus("idle");
+    }
+  }
+
   // ── Exposed API ────────────────────────────────────────────────────────
 
   return {
@@ -524,5 +560,8 @@ export function useLearningMode(onBack?: () => void) {
     recallState,
     teachState,
     startLearningMode,
+    startExplanation,
+    startRecall,
+    startTeach,
   };
 }
